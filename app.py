@@ -61,15 +61,14 @@ Que el alumno entienda la literatura, pero también sienta la emoción poética.
 
 # 4. INICIALIZACIÓN DEL MODELO Y MEMORIA
 if "model" not in st.session_state:
-    st.session_state.model = genai.GenerativeModel(
-        model_name="models/gemini-1.5-flash-latest",
-        system_instruction=SYSTEM_PROMPT
-    )
-    # Iniciamos el chat con un historial vacío
-    st.session_state.chat = st.session_state.model.start_chat(history=[])
+    # Usamos el nombre más genérico posible
+    st.session_state.model = genai.GenerativeModel('gemini-1.5-flash')
 
-if "messages" not in st.session_state:
-    st.session_state.messages = []
+if "chat" not in st.session_state:
+    # En lugar de system_instruction, le pasamos el contexto en el primer mensaje
+    st.session_state.chat = st.session_state.model.start_chat(history=[])
+    # Enviamos la personalidad de Lorca como primer mensaje oculto
+    st.session_state.chat.send_message(f"Instrucción de sistema: {SYSTEM_PROMPT}")
 
 # 5. MOSTRAR MENSAJES ANTERIORES
 for message in st.session_state.messages:
