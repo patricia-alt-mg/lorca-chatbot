@@ -16,9 +16,11 @@ st.markdown("""
 st.title("✍️ Federico García Lorca")
 st.subheader("En la Residencia de Estudiantes, Madrid")
 
-# 1. Configuración de API
+# 1. Configuración de API (Copia este bloque exacto)
 if "GEMINI_KEY" in st.secrets:
-    genai.configure(api_key=st.secrets["GEMINI_KEY"])
+    # Esto obliga a la API a usar la versión estable 'v1' y evita el error 404 de la 'v1beta'
+    client_options = {"api_version": "v1"} 
+    genai.configure(api_key=st.secrets["GEMINI_KEY"], client_options=client_options)
 else:
     st.error("Falta la GEMINI_KEY en Secrets.")
     st.stop()
@@ -47,7 +49,7 @@ if prompt := st.chat_input("Pregúntale a Federico..."):
     with st.chat_message("assistant"):
         try:
             # Usamos el nombre del modelo que ya sabemos que la versión 0.8.3 acepta
-            model = genai.GenerativeModel('gemini-1.5-flash')
+            model = genai.GenerativeModel('gemini-1.0-pro')
             
             full_query = f"{LORCA_PROMPT}\n\nAlumno dice: {prompt}"
             response = model.generate_content(full_query)
