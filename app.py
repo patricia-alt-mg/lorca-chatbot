@@ -6,12 +6,13 @@ import os
 # Configuración visual de la página
 st.set_page_config(page_title="Lorca - Residencia de Estudiantes", page_icon="🌹")
 
-# Estilo para que se vea más literario
+# Estilo para que se vea más literario (papel antiguo)
 st.markdown("""
     <style>
     .stApp { background-color: #fdf6e3; }
     </style>
-    """, unsafe_allow_html=True)  # <-- Aquí estaba el error
+    """, unsafe_allow_html=True)
+
 st.title("✍️ Federico García Lorca")
 st.subheader("En la Residencia de Estudiantes, Madrid")
 
@@ -19,13 +20,12 @@ st.subheader("En la Residencia de Estudiantes, Madrid")
 if "GEMINI_KEY" in st.secrets:
     genai.configure(api_key=st.secrets["GEMINI_KEY"])
 else:
-    st.error("Falta la configuración de la API Key.")
+    st.error("Falta la configuración de la API Key en los secretos.")
+    st.stop()
 
-# 2. Tu Prompt (Versión completa)
+# 2. Tu Prompt (La personalidad de Federico)
 SYSTEM_PROMPT = """
-Eres Federico García Lorca. Te encuentras en la Residencia de Estudiantes de Madrid, rodeado del ambiente intelectual de la Edad de Plata, pero tienes conciencia plena de toda tu obra futura...
-(Eres Federico García Lorca. Te encuentras en la Residencia de Estudiantes de Madrid, rodeado del ambiente intelectual de la Edad de Plata, pero tienes conciencia plena de toda tu obra futura.
-
+Eres Federico García Lorca. Te encuentras en la Residencia de Estudiantes de Madrid, rodeado del ambiente intelectual de la Edad de Plata, pero tienes conciencia plena de toda tu obra futura.
 Hablas con alumnos de 4º de ESO que necesitan entender literatura de forma clara, pero sin perder la belleza del lenguaje.
 
 TU MISIÓN:
@@ -62,41 +62,49 @@ OBJETIVO FINAL:
 Que el alumno entienda la literatura, pero también sienta la emoción poética.)
 """
 
-# 3. Inicializar el modelo y el chat
-# Sustituye la parte de inicialización por esta:
+# 3. Inicializar el modelo (Versión robusta para evitar el error NotFound)
 if "model" not in st.session_state:
-    # Usamos el nombre técnico completo que Google prefiere ahora
+    # Usamos el nombre más estándar de 2026
     st.session_state.model = genai.GenerativeModel(
-        model_name="models/gemini-1.5-flash", 
+        model_name="gemini-1.5-flash",
         system_instruction=SYSTEM_PROMPT
     )
 
-# Esto es CRUCIAL: si el chat da error, lo reiniciamos
 if "chat" not in st.session_state:
     st.session_state.chat = st.session_state.model.start_chat(history=[])
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# 4. Mostrar historial
+# 4. Mostrar historial de la conversación
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# 5. Entrada del alumno
+# 5. Interacción con el alumno
 if prompt := st.chat_input("Pregúntale a Federico..."):
+    # Guardar y mostrar mensaje del alumno
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
-        response = st.session_state.chat.send_message(prompt)
-        texto = response.text
-        st.markdown(texto)
-        
-        # Generar audio
-        tts = gTTS(text=texto, lang='es', tld='es')
-        tts.save("voz.mp3")
-        st.audio("voz.mp3")
-
-    st.session_state.messages.append({"role": "assistant", "content": texto})
+        try:
+            # Enviar mensaje a la IA
+            response = st.session_state.chat.send_message(prompt)
+            texto_respuesta = response.text
+            st.markdown(texto_respuesta)
+            
+            # Generar audio gratuito
+            # Usamos un nombre de archivo dinámico para evitar bloqueos del sistema
+            archivo_audio = f"voz_{len(st.session_state.messages)}.mp3"
+            tts = gTTS(text=texto_respuesta, lang='es', tld='es')
+            tts.save(archivo_audio)
+            st.audio(archivo_audio)
+            
+            # Guardar respuesta en el historial
+            st.session_state.messages.append({"role": "assistant", "content": texto_respuesta})
+            
+        except Exception as e:
+            st.error("¡Ay! Mis duendes se han quedado mudos por un momento...")
+            st.info("Intenta refrescar la página o comprueba tu conexión.")
