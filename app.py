@@ -63,13 +63,12 @@ Que el alumno entienda la literatura, pero también sienta la emoción poética.
 """
 
 # 3. Inicializar el modelo (Versión robusta para evitar el error NotFound)
+# Busca este bloque en tu app.py y asegúrate de que esté así:
 if "model" not in st.session_state:
-    # Usamos el nombre más estándar de 2026
     st.session_state.model = genai.GenerativeModel(
-        model_name="gemini-1.5-flash",
-        system_instruction=SYSTEM_PROMPT
+        model_name="gemini-1.5-flash", # O el que te haya funcionado (1.0-pro)
+        system_instruction=SYSTEM_PROMPT  # <--- ESTO ES LO QUE LE DA LA PERSONALIDAD
     )
-
 if "chat" not in st.session_state:
     st.session_state.chat = st.session_state.model.start_chat(history=[])
 
