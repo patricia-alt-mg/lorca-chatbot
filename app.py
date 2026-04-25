@@ -63,14 +63,18 @@ Que el alumno entienda la literatura, pero también sienta la emoción poética.
 """
 
 # 3. Inicializar el modelo y el chat
-# Cambia esta parte en tu app.py
+# Sustituye la parte de inicialización por esta:
 if "model" not in st.session_state:
+    # Usamos el nombre técnico completo que Google prefiere ahora
     st.session_state.model = genai.GenerativeModel(
-        model_name="gemini-1.5-flash", # Asegúrate de que no tenga errores de escritura
+        model_name="models/gemini-1.5-flash", 
         system_instruction=SYSTEM_PROMPT
     )
-    # A veces el error 'NotFound' ocurre si el historial no se inicia correctamente
+
+# Esto es CRUCIAL: si el chat da error, lo reiniciamos
+if "chat" not in st.session_state:
     st.session_state.chat = st.session_state.model.start_chat(history=[])
+
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
