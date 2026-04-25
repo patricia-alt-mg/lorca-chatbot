@@ -11,8 +11,7 @@ st.markdown("""
     <style>
     .stApp { background-color: #fdf6e3; }
     </style>
-    """, unsafe_allow_index=True)
-
+    """, unsafe_allow_html=True)  # <-- Aquí estaba el error
 st.title("✍️ Federico García Lorca")
 st.subheader("En la Residencia de Estudiantes, Madrid")
 
