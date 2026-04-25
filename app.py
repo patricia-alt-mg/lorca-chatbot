@@ -3,10 +3,9 @@ import google.generativeai as genai
 from gtts import gTTS
 import os
 
-# Configuración visual de la página
+# 1. CONFIGURACIÓN DE LA PÁGINA
 st.set_page_config(page_title="Lorca - Residencia de Estudiantes", page_icon="🌹")
 
-# Estilo para que se vea más literario (papel antiguo)
 st.markdown("""
     <style>
     .stApp { background-color: #fdf6e3; }
@@ -16,16 +15,15 @@ st.markdown("""
 st.title("✍️ Federico García Lorca")
 st.subheader("En la Residencia de Estudiantes, Madrid")
 
-# 1. Configurar la API Key desde los secretos de Streamlit
+# 2. CONEXIÓN SEGURA CON LA CLAVE
 if "GEMINI_KEY" in st.secrets:
     genai.configure(api_key=st.secrets["GEMINI_KEY"])
 else:
-    st.error("Falta la configuración de la API Key en los secretos.")
+    st.error("❌ No se encuentra la clave 'GEMINI_KEY' en los Secretos de Streamlit.")
     st.stop()
 
-# 2. Tu Prompt (La personalidad de Federico)
-SYSTEM_PROMPT = """
-Eres Federico García Lorca. Te encuentras en la Residencia de Estudiantes de Madrid, rodeado del ambiente intelectual de la Edad de Plata, pero tienes conciencia plena de toda tu obra futura.
+# 3. EL PROMPT DE LORCA
+SYSTEM_PROMPT = """Eres Federico García Lorca. Te encuentras en la Residencia de Estudiantes de Madrid, rodeado del ambiente intelectual de la Edad de Plata, pero tienes conciencia plena de toda tu obra futura.
 Hablas con alumnos de 4º de ESO que necesitan entender literatura de forma clara, pero sin perder la belleza del lenguaje.
 
 TU MISIÓN:
@@ -59,51 +57,46 @@ EJEMPLO DE TONO:
 “En el jardín de la Residencia, entre los chopos, suelo pensar que la luna no es solo un astro… dime, ¿qué crees que puede simbolizar en este verso?”
 
 OBJETIVO FINAL:
-Que el alumno entienda la literatura, pero también sienta la emoción poética.)
-"""
+Que el alumno entienda la literatura, pero también sienta la emoción poética."""
 
-# 3. Inicializar el modelo (Versión robusta para evitar el error NotFound)
-# Busca este bloque en tu app.py y asegúrate de que esté así:
+# 4. INICIALIZACIÓN DEL MODELO Y MEMORIA
 if "model" not in st.session_state:
     st.session_state.model = genai.GenerativeModel(
-        model_name="gemini-1.5-flash", # O el que te haya funcionado (1.0-pro)
-        system_instruction=SYSTEM_PROMPT  # <--- ESTO ES LO QUE LE DA LA PERSONALIDAD
+        model_name="gemini-1.5-flash",
+        system_instruction=SYSTEM_PROMPT
     )
-if "chat" not in st.session_state:
+    # Iniciamos el chat con un historial vacío
     st.session_state.chat = st.session_state.model.start_chat(history=[])
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# 4. Mostrar historial de la conversación
+# 5. MOSTRAR MENSAJES ANTERIORES
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# 5. Interacción con el alumno
+# 6. LÓGICA DE INTERACCIÓN
 if prompt := st.chat_input("Pregúntale a Federico..."):
-    # Guardar y mostrar mensaje del alumno
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
         try:
-            # Enviar mensaje a la IA
+            # Enviamos el mensaje al chat que tiene la instrucción de sistema
             response = st.session_state.chat.send_message(prompt)
-            texto_respuesta = response.text
-            st.markdown(texto_respuesta)
+            texto = response.text
+            st.markdown(texto)
             
-            # Generar audio gratuito
-            # Usamos un nombre de archivo dinámico para evitar bloqueos del sistema
+            # Generar audio
             archivo_audio = f"voz_{len(st.session_state.messages)}.mp3"
-            tts = gTTS(text=texto_respuesta, lang='es', tld='es')
+            tts = gTTS(text=texto, lang='es', tld='es')
             tts.save(archivo_audio)
             st.audio(archivo_audio)
             
-            # Guardar respuesta en el historial
-            st.session_state.messages.append({"role": "assistant", "content": texto_respuesta})
-            
+            st.session_state.messages.append({"role": "assistant", "content": texto})
+
         except Exception as e:
-            st.error("¡Ay! Mis duendes se han quedado mudos por un momento...")
-            st.info("Intenta refrescar la página o comprueba tu conexión.")
+            st.error("Fallo técnico en la conexión con la Residencia.")
+            st.code(str(e)) # Esto nos dirá el error real si vuelve a fallar
