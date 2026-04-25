@@ -45,7 +45,7 @@ if prompt := st.chat_input("Pregúntale a Federico..."):
     with st.chat_message("assistant"):
         try:
             # USAMOS EL NOMBRE TÉCNICO QUE NO DA 404
-            model = genai.GenerativeModel('models/gemini-1.5-flash')
+            model = genai.GenerativeModel('gemini-pro')
             
             # Unimos el prompt y la pregunta en un solo envío
             respuesta = model.generate_content(f"{LORCA_PROMPT}\n\nPregunta: {prompt}")
