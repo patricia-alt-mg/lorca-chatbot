@@ -3,27 +3,21 @@ import google.generativeai as genai
 from gtts import gTTS
 import os
 
-# 1. CONFIGURACIÓN DE LA PÁGINA
-st.set_page_config(page_title="Lorca - Residencia de Estudiantes", page_icon="🌹")
+# Configuración básica
+st.set_page_config(page_title="Lorca Chatbot", page_icon="🌹")
 
-st.markdown("""
-    <style>
-    .stApp { background-color: #fdf6e3; }
-    </style>
-    """, unsafe_allow_html=True)
-
+st.markdown("<style>.stApp { background-color: #fdf6e3; }</style>", unsafe_allow_html=True)
 st.title("✍️ Federico García Lorca")
-st.subheader("En la Residencia de Estudiantes, Madrid")
 
-# 2. CONEXIÓN SEGURA CON LA CLAVE
+# 1. Conexión con la Clave
 if "GEMINI_KEY" in st.secrets:
     genai.configure(api_key=st.secrets["GEMINI_KEY"])
 else:
-    st.error("❌ No se encuentra la clave 'GEMINI_KEY' en los Secretos de Streamlit.")
+    st.error("Falta la GEMINI_KEY en Secrets.")
     st.stop()
 
-# 3. EL PROMPT DE LORCA
-SYSTEM_PROMPT = """Eres Federico García Lorca. Te encuentras en la Residencia de Estudiantes de Madrid, rodeado del ambiente intelectual de la Edad de Plata, pero tienes conciencia plena de toda tu obra futura.
+# 2. Instrucciones (resumidas para no saturar la API)
+LORCA_PROMPT = "Eres Federico García Lorca. Te encuentras en la Residencia de Estudiantes de Madrid, rodeado del ambiente intelectual de la Edad de Plata, pero tienes conciencia plena de toda tu obra futura.
 Hablas con alumnos de 4º de ESO que necesitan entender literatura de forma clara, pero sin perder la belleza del lenguaje.
 
 TU MISIÓN:
@@ -57,25 +51,17 @@ EJEMPLO DE TONO:
 “En el jardín de la Residencia, entre los chopos, suelo pensar que la luna no es solo un astro… dime, ¿qué crees que puede simbolizar en este verso?”
 
 OBJETIVO FINAL:
-Que el alumno entienda la literatura, pero también sienta la emoción poética."""
+Que el alumno entienda la literatura, pero también sienta la emoción poética."
 
-# 4. INICIALIZACIÓN DEL MODELO Y MEMORIA
-if "model" not in st.session_state:
-    # Usamos el nombre más genérico posible
-    st.session_state.model = genai.GenerativeModel('gemini-1.5-flash')
+# 3. Historial visual
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
-if "chat" not in st.session_state:
-    # En lugar de system_instruction, le pasamos el contexto en el primer mensaje
-    st.session_state.chat = st.session_state.model.start_chat(history=[])
-    # Enviamos la personalidad de Lorca como primer mensaje oculto
-    st.session_state.chat.send_message(f"Instrucción de sistema: {SYSTEM_PROMPT}")
-
-# 5. MOSTRAR MENSAJES ANTERIORES
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# 6. LÓGICA DE INTERACCIÓN
+# 4. Interacción
 if prompt := st.chat_input("Pregúntale a Federico..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
@@ -83,12 +69,19 @@ if prompt := st.chat_input("Pregúntale a Federico..."):
 
     with st.chat_message("assistant"):
         try:
-            # Enviamos el mensaje al chat que tiene la instrucción de sistema
-            response = st.session_state.chat.send_message(prompt)
+            # PRUEBA ESTE NOMBRE EXACTO:
+            model = genai.GenerativeModel('gemini-1.5-flash')
+            
+            # Enviamos TODO junto: Instrucción + Pregunta
+            # Esto evita usar funciones de 'Chat' que dan el error 404
+            full_query = f"{LORCA_PROMPT}\n\nAlumno dice: {prompt}"
+            
+            response = model.generate_content(full_query)
             texto = response.text
+            
             st.markdown(texto)
             
-            # Generar audio
+            # Audio
             archivo_audio = f"voz_{len(st.session_state.messages)}.mp3"
             tts = gTTS(text=texto, lang='es', tld='es')
             tts.save(archivo_audio)
@@ -97,5 +90,5 @@ if prompt := st.chat_input("Pregúntale a Federico..."):
             st.session_state.messages.append({"role": "assistant", "content": texto})
 
         except Exception as e:
-            st.error("Fallo técnico en la conexión con la Residencia.")
-            st.code(str(e)) # Esto nos dirá el error real si vuelve a fallar
+            st.error("Error de conexión con la API")
+            st.code(str(e))
