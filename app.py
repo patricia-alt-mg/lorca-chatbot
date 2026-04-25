@@ -62,7 +62,7 @@ Que el alumno entienda la literatura, pero también sienta la emoción poética.
 # 4. INICIALIZACIÓN DEL MODELO Y MEMORIA
 if "model" not in st.session_state:
     st.session_state.model = genai.GenerativeModel(
-        model_name="models/gemini-1.5-pro-latest",
+        model_name="models/gemini-1.5-flash-latest",
         system_instruction=SYSTEM_PROMPT
     )
     # Iniciamos el chat con un historial vacío
