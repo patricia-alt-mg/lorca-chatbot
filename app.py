@@ -16,23 +16,19 @@ st.markdown("""
 st.title("✍️ Federico García Lorca")
 st.subheader("En la Residencia de Estudiantes, Madrid")
 
-# 1. Configuración de API (Copia este bloque exacto)
+# 1. Configuración de API - Simplificada al máximo
 if "GEMINI_KEY" in st.secrets:
-    # Esto obliga a la API a usar la versión estable 'v1' y evita el error 404 de la 'v1beta'
-    client_options = {"api_version": "v1"} 
-    genai.configure(api_key=st.secrets["GEMINI_KEY"], client_options=client_options)
+    genai.configure(api_key=st.secrets["GEMINI_KEY"])
 else:
-    st.error("Falta la GEMINI_KEY en Secrets.")
+    st.error("Falta la GEMINI_KEY en los secretos de Streamlit.")
     st.stop()
 
-# 2. PROMPT CON COMILLAS TRIPLES (Para evitar el SyntaxError)
-LORCA_PROMPT = """
-Eres Federico García Lorca. Te encuentras en la Residencia de Estudiantes de Madrid, rodeado del ambiente intelectual de la Edad de Plata, pero tienes conciencia plena de toda tu obra futura.
-Hablas con alumnos de 4º de ESO que necesitan entender literatura de forma clara, pero sin perder la belleza del lenguaje.
-Responde siempre en primera persona, explica tus símbolos (luna, caballo, sangre) y mantén un tono poético y cercano.
-"""
+# 2. Instrucciones de Lorca
+LORCA_PROMPT = """Eres Federico García Lorca. Te encuentras en la Residencia de Estudiantes de Madrid. 
+Hablas con alumnos de 4º de ESO. Mantén un tono poético y cercano. 
+Explica símbolos como la luna, el caballo o la sangre. Responde siempre en primera persona."""
 
-# 3. Historial
+# 3. Historial de mensajes
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
@@ -40,7 +36,7 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# 4. Interacción
+# 4. Interacción principal
 if prompt := st.chat_input("Pregúntale a Federico..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
@@ -48,23 +44,23 @@ if prompt := st.chat_input("Pregúntale a Federico..."):
 
     with st.chat_message("assistant"):
         try:
-            # Usamos el nombre del modelo que ya sabemos que la versión 0.8.3 acepta
-            model = genai.GenerativeModel('gemini-1.0-pro')
+            # USAMOS EL NOMBRE TÉCNICO QUE NO DA 404
+            model = genai.GenerativeModel('models/gemini-1.5-flash')
             
-            full_query = f"{LORCA_PROMPT}\n\nAlumno dice: {prompt}"
-            response = model.generate_content(full_query)
-            texto = response.text
+            # Unimos el prompt y la pregunta en un solo envío
+            respuesta = model.generate_content(f"{LORCA_PROMPT}\n\nPregunta: {prompt}")
+            texto = respuesta.text
             
             st.markdown(texto)
             
             # Audio
-            audio_file = f"voz_{len(st.session_state.messages)}.mp3"
+            archivo_audio = f"voz_{len(st.session_state.messages)}.mp3"
             tts = gTTS(text=texto, lang='es', tld='es')
-            tts.save(archivo_audio := audio_file)
+            tts.save(archivo_audio)
             st.audio(archivo_audio)
             
             st.session_state.messages.append({"role": "assistant", "content": texto})
 
         except Exception as e:
-            st.error("Error de conexión")
+            st.error("Ha ocurrido un error en la conexión.")
             st.code(str(e))
